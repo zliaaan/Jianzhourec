@@ -58,7 +58,11 @@ jobs:
         env:
           # 可配置的环境变量
           FEISHU_URL: ${{ secrets.FEISHU_URL }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          LLM_API_KEY: ${{ secrets.STEPFUN_API_KEY }}
+          LLM_BASE_URL: "https://api.stepfun.com/step_plan/v1"
+          LLM_MODEL: "step-3.7-flash"
+          LLM_REASONING_EFFORT: "low"
+          LLM_MAX_TOKENS: "2048"
           # 目标分类，使用逗号分隔的字符串格式
           TARGET_CATEGORYS: "cs.IR,cs.CL,cs.CV"
           # 单页抓取数量，实际抓取会按页遍历

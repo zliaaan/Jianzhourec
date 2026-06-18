@@ -18,6 +18,21 @@ from .status import ArxivDailyStatus
 # 支持多个飞书URL，用逗号分隔
 FEISHU_URLS = [url.strip() for url in os.environ.get("FEISHU_URL", "").split(',') if url.strip()]
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", None)
+LLM_API_KEY = (
+    os.environ.get("LLM_API_KEY")
+    or os.environ.get("STEPFUN_API_KEY")
+    or DEEPSEEK_API_KEY
+)
+LLM_BASE_URL = os.environ.get(
+    "LLM_BASE_URL",
+    "https://api.deepseek.com/v1" if DEEPSEEK_API_KEY else "https://api.stepfun.com/step_plan/v1",
+)
+LLM_MODEL = os.environ.get(
+    "LLM_MODEL",
+    "deepseek-chat" if DEEPSEEK_API_KEY else "step-3.7-flash",
+)
+LLM_MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "2048"))
+LLM_REASONING_EFFORT = os.environ.get("LLM_REASONING_EFFORT", "").strip()
 # TARGET_CATEGORYS 使用逗号分隔的字符串格式
 TARGET_CATEGORYS = os.environ.get("TARGET_CATEGORYS", "cs.IR,cs.CL,cs.CV")
 TARGET_CATEGORYS = [cat.strip() for cat in TARGET_CATEGORYS.split(',')]
@@ -208,43 +223,87 @@ def request_arxiv_page(base_urls, query_params):
 
     raise ArxivFetchError(f"arXiv API 请求多次失败: {last_error}")
 
+def parse_llm_json_response(response_content):
+    content = (response_content or "").strip()
+    if content.startswith("```"):
+        content = re.sub(r"^```(?:json)?\s*", "", content, flags=re.IGNORECASE)
+        content = re.sub(r"\s*```$", "", content).strip()
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", content, flags=re.DOTALL)
+        if not match:
+            raise
+        return json.loads(match.group(0))
+
+
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(5))
-def call_deepseek_api(prompt_content: str,
-                      
-                      api_key: str = None,
-                      model: str = "deepseek-chat",
-                      base_url: str = "https://api.deepseek.com/v1"):
+def call_llm_api(prompt_content: str,
+                 api_key: str = None,
+                 model: str = None,
+                 base_url: str = None):
     """
-    调用 DeepSeek API 并以 JSON 格式返回结果。
+    调用 OpenAI-compatible LLM API 并以 JSON 格式返回结果。
     Args:
         prompt_content (str): 发送给模型的完整提示词内容。
-        api_key (str, optional): 你的 DeepSeek API Key。如果为 None，会尝试从环境变量 'DEEPSEEK_API_KEY' 读取。
-        model (str, optional): 使用的模型名称。默认为 "deepseek-chat"。
-        base_url (str, optional): API 的基础 URL。默认为 DeepSeek 的官方地址。
+        api_key (str, optional): API Key。如果为 None，会从 LLM_API_KEY / STEPFUN_API_KEY / DEEPSEEK_API_KEY 读取。
+        model (str, optional): 使用的模型名称。
+        base_url (str, optional): OpenAI-compatible API 的基础 URL。
     Returns:
         dict: 解析后的 JSON 对象。如果发生错误，则返回 None。
     """
-    # 优先使用传入的 api_key，否则从环境变量读取
     if api_key is None:
-        api_key = os.getenv("DEEPSEEK_API_KEY")
+        api_key = LLM_API_KEY
+    if model is None:
+        model = LLM_MODEL
+    if base_url is None:
+        base_url = LLM_BASE_URL
     if not api_key:
-        print("🔑 错误: API Key 未提供。请设置 DEEPSEEK_API_KEY 环境变量或通过参数传入。")
+        print("🔑 错误: API Key 未提供。请设置 LLM_API_KEY、STEPFUN_API_KEY 或 DEEPSEEK_API_KEY。")
         return None
     try:
         client = OpenAI(api_key=api_key, base_url=base_url)
         messages = [
             {"role": "user", "content": prompt_content}
         ]
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            response_format={'type': 'json_object'}  # 强制返回 JSON
-        )
+        request_kwargs = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": LLM_MAX_TOKENS,
+        }
+        if LLM_REASONING_EFFORT:
+            request_kwargs["reasoning_effort"] = LLM_REASONING_EFFORT
+        try:
+            response = client.chat.completions.create(
+                **request_kwargs,
+                response_format={'type': 'json_object'}
+            )
+        except APIStatusError as e:
+            if e.status_code >= 500 or e.status_code == 429:
+                raise
+            print("⚠️ 当前模型不接受 response_format 参数，改用普通 JSON 提示重试。")
+            response = client.chat.completions.create(
+                **{
+                    **request_kwargs,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": prompt_content + "\n\n请只返回合法 JSON，不要包含 Markdown 代码块或额外解释。"
+                        }
+                    ],
+                },
+            )
         response_content = response.choices[0].message.content
-        return json.loads(response_content)
-    except (APIConnectionError, RateLimitError, APIStatusError) as e:
+        return parse_llm_json_response(response_content)
+    except (APIConnectionError, RateLimitError) as e:
         print(f"🔄 API 遇到可重试错误: {e}。正在由 tenacity 进行重试...")
         raise  # 必须重新抛出异常，tenacity 才能捕获并执行重试策略
+    except APIStatusError as e:
+        if e.status_code >= 500 or e.status_code == 429:
+            print(f"🔄 API 遇到可重试错误: {e}。正在由 tenacity 进行重试...")
+            raise
+        print(f"❌ API 状态错误: {e}")
+        return None
     except ImportError:
         print("📦 错误：'openai' 库未安装。请运行 'pip install openai'。")
         return None
@@ -314,8 +373,7 @@ def get_daily_arxiv_papers(category='cs.CL', max_results=20):
 
 def rough_analyze_paper(arxiv_id, paper):
     prompt = PRERANK_PROMPT.format(title=paper['title'])
-    analysis = call_deepseek_api(
-        prompt, api_key=DEEPSEEK_API_KEY)
+    analysis = call_llm_api(prompt, api_key=LLM_API_KEY)
     if analysis:
         # 将分析结果合并到原始论文信息中
         paper.update(analysis)
@@ -381,8 +439,7 @@ def rough_rank_papers(results, filter_threshold=2, max_workers=10):
 def fine_analyze_paper(arxiv_id, paper):
     prompt = FINERANK_PROMPT.format(
         title=paper['title'], summary=paper['ori_summary'])
-    analysis = call_deepseek_api(
-        prompt, api_key=DEEPSEEK_API_KEY)
+    analysis = call_llm_api(prompt, api_key=LLM_API_KEY)
     if analysis:
         # 将分析结果合并到原始论文信息中
         paper.update(analysis)
