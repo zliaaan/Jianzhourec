@@ -11,6 +11,59 @@ FEISHU_URLS = [url.strip() for url in FEISHU_URLS if url.strip()]
 RETURN_PAPERS = int(os.environ.get("RETURN_PAPERS", "20"))
 
 
+def truncate_text(value, max_len=500):
+    text = str(value or "").strip()
+    if len(text) <= max_len:
+        return text
+    return text[:max_len - 3] + "..."
+
+
+def build_paper_card(papers):
+    date = datetime.now().strftime('%Y-%m-%d')
+    elements = [
+        {
+            "tag": "markdown",
+            "content": f"今日筛选出 {len(papers)} 篇搜广推相关 arXiv 论文。"
+        }
+    ]
+
+    for index, paper in enumerate(papers, start=1):
+        title = truncate_text(paper.get('title', 'Untitled'), 160)
+        translation = truncate_text(paper.get('translation', 'N/A'), 180)
+        score = paper.get('rerank_relevance_score', 'N/A')
+        summary = truncate_text(paper.get('summary', 'N/A'), 600)
+        url = paper.get('url', '')
+        title_line = f"[{title}]({url})" if url else title
+        score_line = f"{score}/10" if isinstance(score, int) else str(score)
+
+        elements.append({
+            "tag": "markdown",
+            "content": (
+                f"**{index}. {title_line}**\n"
+                f"**译名：**{translation}\n"
+                f"**评分：**{score_line}\n"
+                f"**摘要：**{summary}"
+            )
+        })
+
+        if index != len(papers):
+            elements.append({"tag": "hr"})
+
+    return {
+        "config": {
+            "wide_screen_mode": True
+        },
+        "header": {
+            "template": "blue",
+            "title": {
+                "tag": "plain_text",
+                "content": f"搜广推 arXiv 论文推送 {date}"
+            }
+        },
+        "elements": elements
+    }
+
+
 def get_latest_json_file(json_dir):
     """获取最新的JSON文件路径
     
@@ -73,39 +126,8 @@ def send_papers_to_feishu(papers, feishu_urls=None):
         print("⚠️ 没有有效的飞书URL，跳过发送消息")
         return
     
-    date = datetime.now().strftime('%Y-%m-%d')
-    
-    card_data = {
-        "type": "template",
-        "data": {
-            "template_id": "AAqxH62u1uNko",
-            "template_version_name": "1.0.8",
-            "template_variable": {
-                "loop": [],
-                "date": date
-            }
-        }
-    }
-
-    for paper in papers:
-        title = paper['title']
-        translation = paper.get('translation', 'N/A')
-        score = paper.get('rerank_relevance_score', 'N/A')
-        summary = paper.get('summary', 'N/A')
-        url = paper['url']
-        
-        paper = f"[{title}]({url})"
-        score = "⭐️" * score + f" <text_tag color='blue'>{score}分</text_tag>" if isinstance(score, int) else "N/A"
-        
-        card_data['data']['template_variable']['loop'].append({
-            "paper": paper,
-            "translation": translation,
-            "score": score,
-            "summary": summary
-        })
-        
-    card = json.dumps(card_data)
-    body = json.dumps({"msg_type": "interactive", "card": card})
+    card_data = build_paper_card(papers)
+    body = json.dumps({"msg_type": "interactive", "card": card_data}, ensure_ascii=False)
     headers = {"Content-Type": "application/json"}
     failures = []
     
