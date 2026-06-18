@@ -135,7 +135,7 @@ def send_papers_to_feishu(papers, feishu_urls=None):
     for idx, url in enumerate(feishu_urls):
         send_label = f"[{idx+1}/{len(feishu_urls)}]"
         try:
-            ret = requests.post(url=url, data=body, headers=headers, timeout=10)
+            ret = requests.post(url=url, data=body.encode("utf-8"), headers=headers, timeout=10)
             print(f"✉️ 飞书推送{send_label}返回状态: {ret.status_code}")
             response_body = ret.text[:500]
             if not ret.ok:
