@@ -3,8 +3,9 @@ name: arxiv_daily_full
 on:
   # 定时触发
   schedule:
-    # 每天UTC时间3:23（北京时间11:23）执行，避开整点和高峰自动任务
-    - cron: '23 3 * * *'
+    # 每天北京时间11:23执行，避开整点和高峰自动任务
+    - cron: '23 11 * * *'
+      timezone: 'Asia/Shanghai'
   # 手动触发
   workflow_dispatch:
 
@@ -178,6 +179,15 @@ jobs:
           commit_message: "docs: update arXiv papers HTML pages"
           full_commit_message: "docs: update arXiv papers HTML pages ${{ github.sha }}"
           force_orphan: false
+
+      # 主工作流成功后直接推送，避免依赖二级 workflow_run 触发器
+      - name: Send Feishu message
+        env:
+          FEISHU_URL: ${{ secrets.FEISHU_URL }}
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          cd paperBotV2/arxiv_daily
+          python arxiv_feishu_msg.py
 
       # 更新README或其他地方的链接，指向最新的HTML页面
       - name: Update latest paper link
