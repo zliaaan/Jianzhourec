@@ -61,3 +61,4 @@ date,run_id,run_attempt,workflow,trigger,status,stage,started_at,ended_at,durati
 20260703,28643462509,1,arxiv_daily_full,schedule,failed,rough_rank,2026-07-03T06:44:46+00:00,2026-07-03T06:59:03+00:00,857,233,7,80,146,0,0,0,0,0,0,0,0,false,false,'<' not supported between instances of 'str' and 'int'
 20260703,28643462509,1,arxiv_daily_full,schedule,success,completed,2026-07-03T07:29:04+00:00,2026-07-03T07:42:45+00:00,821,224,6,77,141,215,158,57,2,1,1,1.11,9.0,true,true,
 20260704,28697750354,1,arxiv_daily_full,schedule,success,completed,2026-07-04T06:30:29+00:00,2026-07-04T07:23:15+00:00,3166,0,0,0,0,0,0,0,0,0,0,0,0,false,true,
+20260704,28705006900,1,arxiv_daily_recovery,schedule,success,completed,2026-07-04T11:39:36+00:00,2026-07-04T11:45:27+00:00,351,0,0,0,0,0,0,0,0,0,0,0,0,false,true,
