@@ -66,3 +66,5 @@ date,run_id,run_attempt,workflow,trigger,status,stage,started_at,ended_at,durati
 20260705,28739518196,1,arxiv_daily_recovery,schedule,success,completed,2026-07-05T11:40:10+00:00,2026-07-05T11:45:25+00:00,315,0,0,0,0,0,0,0,0,0,0,0,0,false,true,
 20260706,28776555382,1,arxiv_daily_full,schedule,success,completed,2026-07-06T07:57:27+00:00,2026-07-06T08:03:21+00:00,354,0,0,0,0,0,0,0,0,0,0,0,0,false,true,
 20260706,28796693916,1,arxiv_daily_recovery,schedule,success,completed,2026-07-06T13:53:38+00:00,2026-07-06T14:00:19+00:00,401,0,0,0,0,0,0,0,0,0,0,0,0,false,true,
+20260707,28847655237,1,arxiv_daily_full,schedule,failed,rough_rank,2026-07-07T06:57:50+00:00,2026-07-07T07:10:53+00:00,783,187,7,60,120,0,0,0,0,0,0,0,0,false,false,'<' not supported between instances of 'str' and 'int'
+20260707,28847655237,1,arxiv_daily_full,schedule,success,completed,2026-07-07T07:40:53+00:00,2026-07-07T07:53:13+00:00,740,185,7,59,119,179,135,44,8,7,1,1.29,2.29,true,true,
