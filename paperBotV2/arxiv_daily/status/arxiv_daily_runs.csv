@@ -115,3 +115,4 @@ date,run_id,run_attempt,workflow,trigger,status,stage,started_at,ended_at,durati
 20260818,32097483419,1,arxiv_daily_full,schedule,success,completed,2026-08-18T04:00:45+00:00,2026-08-18T04:13:04+00:00,739,208,29,70,109,195,139,56,9,8,1,1.68,7.62,true,true,
 20260819,32214220857,1,arxiv_daily_full,schedule,success,completed,2026-08-19T04:02:13+00:00,2026-08-19T04:15:52+00:00,819,189,9,69,111,165,127,38,8,7,1,1.6,7.57,true,true,
 20260820,32330311181,1,arxiv_daily_full,schedule,success,completed,2026-08-20T04:02:01+00:00,2026-08-20T04:15:46+00:00,825,197,18,73,106,164,123,41,6,6,0,1.57,7.17,true,true,
+20260821,32445565645,1,arxiv_daily_full,schedule,success,completed,2026-08-21T04:04:44+00:00,2026-08-21T04:15:15+00:00,631,171,13,72,86,146,105,41,6,5,1,1.68,7.8,true,true,
