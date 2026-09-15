@@ -1,29 +1,41 @@
 {
   "date": "20260915",
-  "status": "failed",
-  "stage": "fetch",
-  "workflow": "arxiv_daily_full",
-  "run_id": "34948639010",
+  "status": "success",
+  "stage": "completed",
+  "workflow": "arxiv_daily_recovery",
+  "run_id": "34984085748",
   "run_attempt": "1",
   "trigger": "schedule",
-  "started_at": "2026-09-15T12:41:23+00:00",
-  "ended_at": "2026-09-15T13:55:50+00:00",
+  "started_at": "2026-09-15T16:33:14+00:00",
+  "ended_at": "2026-09-15T17:50:56+00:00",
   "fetch": {
-    "success": false,
-    "total_papers": 0,
+    "success": true,
+    "total_papers": 136,
     "by_category": {
       "cs.IR": {
-        "success": false,
-        "papers": 0,
-        "pages": 0,
-        "error": "arXiv API 请求多次失败: HTTPSConnectionPool(host='export.arxiv.org', port=443): Read timed out. (read timeout=30)"
+        "success": true,
+        "papers": 10,
+        "pages": 1,
+        "error": ""
+      },
+      "cs.CL": {
+        "success": true,
+        "papers": 56,
+        "pages": 1,
+        "error": ""
+      },
+      "cs.CV": {
+        "success": true,
+        "papers": 70,
+        "pages": 1,
+        "error": ""
       }
     }
   },
   "llm": {
-    "rough_rank_total": 0,
+    "rough_rank_total": 127,
     "rough_rank_success": 0,
-    "rough_rank_failed": 0,
+    "rough_rank_failed": 127,
     "fine_rank_total": 0,
     "fine_rank_success": 0,
     "fine_rank_failed": 0,
@@ -31,9 +43,9 @@
     "avg_fine_score": 0
   },
   "output": {
-    "daily_json_written": false,
+    "daily_json_written": true,
     "html_generated": true,
-    "feishu_should_send": false
+    "feishu_should_send": true
   },
-  "error": "arXiv API 请求多次失败: HTTPSConnectionPool(host='export.arxiv.org', port=443): Read timed out. (read timeout=30)"
+  "error": ""
 }
